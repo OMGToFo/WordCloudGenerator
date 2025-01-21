@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 
 import random # for word cloud color schemas
 
+
+from PIL import Image
+import numpy as np
+
 st.header('Word Cloud Generator')
 
 st.subheader("")
@@ -68,10 +72,11 @@ if uploaded_file1:
 
         if len(result_df) > 10:
             wordCloudStart = st.checkbox("Generate Wordcloud?")
+
             if wordCloudStart:
                 excluded_words = st.text_input("Enter words to exclude from Wordcloud (comma-separated):", value="Nicht,nicht,Nichts,nichts,und,die,der,das, nan,Rien,rien,Die,Der,Das,et,ist,est,Les,mit,Le,La,le,la,Nan,Und,Ist,Et")
                 excluded_words = [word.strip() for word in excluded_words.split(',')]
-                st.sidebar.write("Bereinigtes Dataframe:")
+
                 
                 # Filter out excluded words
                 bereinigtes_dataframe = result_df[~result_df['Wort'].isin(excluded_words)]
@@ -81,10 +86,29 @@ if uploaded_file1:
                 bereinigtes_dataframe['Wort'] = bereinigtes_dataframe['Wort'].astype(str).str.strip()
                 bereinigtes_dataframe = bereinigtes_dataframe[bereinigtes_dataframe['Wort'] != '']
 
+                st.sidebar.success("Bereinigtes Dataframe:")
                 st.sidebar.write(bereinigtes_dataframe)
 
                 # Create a dictionary for word frequencies
                 frequencies = dict(zip(bereinigtes_dataframe['Wort'], bereinigtes_dataframe['Anzahl']))
+
+
+                # WordCloud Configuration Options
+                st.sidebar.header("WordCloud Configuration")
+                max_words = st.sidebar.slider("Maximum Number of Words", min_value=10, max_value=500, value=200, step=10)
+                font_size = st.sidebar.slider("Font Size Range", min_value=10, max_value=100, value=(10, 50))
+                background_color = st.sidebar.color_picker("Background Color", value="#ffffff")
+                contour_color = st.sidebar.color_picker("Contour Color", value="#000000")
+                contour_width = st.sidebar.slider("Contour Width", min_value=0, max_value=10, value=1)
+
+                # Option to Upload Mask for WordCloud Shape
+                uploaded_mask = st.sidebar.file_uploader("Upload Mask Image (Optional)", type=["png", "jpg", "jpeg"])
+                mask = None
+                if uploaded_mask:
+                    mask_image = Image.open(uploaded_mask).convert("L")
+                    mask = np.array(mask_image)
+
+
 
                 # Allow user to select a color scheme
                 color_scheme = st.selectbox(
@@ -113,8 +137,21 @@ if uploaded_file1:
 
 
 
-                # Generate the word cloud using the dictionary
-                wordcloud = WordCloud(width=800, height=400).generate_from_frequencies(frequencies)
+
+                # Generate the WordCloud
+                wordcloud = WordCloud(
+                    width=800,
+                    height=400,
+                    max_words=max_words,
+                    min_font_size=font_size[0],
+                    max_font_size=font_size[1],
+                    background_color=background_color,
+                    contour_color=contour_color,
+                    contour_width=contour_width,
+                    mask=mask
+                ).generate_from_frequencies(frequencies)
+
+
 
 
                 # Apply the selected color scheme
@@ -130,14 +167,6 @@ if uploaded_file1:
 
 
 
-
-                # Display the word cloud
-                _=""" alte Schreibweise
-                plt.figure(figsize=(10, 5))
-                plt.imshow(wordcloud, interpolation='bilinear')
-                plt.axis("off")
-                """
-
                 # Create a figure and axis for the WordCloud
                 fig, ax = plt.subplots(figsize=(10, 5))
                 ax.imshow(wordcloud, interpolation='bilinear')
@@ -145,4 +174,4 @@ if uploaded_file1:
 
 
 
-                st.pyplot()
+                st.pyplot(fig)
