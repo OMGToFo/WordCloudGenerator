@@ -5,3 +5,5 @@ pyxlsb
 wordcloud
 matplotlib
 openpyxl
+numpy
+pillow
